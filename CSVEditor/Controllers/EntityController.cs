@@ -7,6 +7,7 @@ using System.Globalization;
 
 namespace CSVEditor.Controllers
 {
+    [Route("")]
     public class EntityController : Controller
     {
         private readonly CsvAppDbContext _context;
@@ -14,11 +15,13 @@ namespace CSVEditor.Controllers
         {
             _context = context;
         }
+        [HttpGet("Index")]
+        [HttpGet("")]
         public IActionResult Index()
         {
             return View();
         }
-        [HttpPost]
+        [HttpPost("UploadCsv")]
         public async Task<IActionResult> UploadCsv(IFormFile file, string mode)
         {
             if (file == null || file.Length == 0)
@@ -43,13 +46,20 @@ namespace CSVEditor.Controllers
             return RedirectToAction("Table");
         }
 
+        [HttpGet("LoadFromDb")]
+        public IActionResult LoadFromDb()
+        {
+            return RedirectToAction("Table");
+        }
+
+        [HttpGet("Table")]
         public async Task<IActionResult> Table()
         {
             var entities = await _context.Entities.ToListAsync();
             return View(entities);
         }
 
-        [HttpPost]
+        [HttpPost("UpdateField")]
         public async Task<IActionResult> UpdateField([FromBody] UpdateFieldRequest request)
         {
             var entity = await _context.Entities.FindAsync(request.Id);
@@ -81,6 +91,23 @@ namespace CSVEditor.Controllers
 
             await _context.SaveChangesAsync();
             return Ok();
+        }
+        [HttpGet("Create")]
+        public IActionResult Create()
+        {
+            return View();
+        }
+
+        [HttpPost("Create")]
+        public async Task<IActionResult> Create(Entity entity)
+        {
+            if (ModelState.IsValid)
+            {
+                _context.Entities.Add(entity);
+                await _context.SaveChangesAsync();
+                return RedirectToAction("Table");
+            }
+            return View(entity);
         }
     }
 }
