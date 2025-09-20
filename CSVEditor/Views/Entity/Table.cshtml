@@ -1,0 +1,115 @@
+﻿@model IEnumerable<CSVEditor.Models.Entity>
+
+@{
+    ViewData["Title"] = "Entities Table";
+}
+
+<h2>Entities Table</h2>
+
+<input type="text" id="searchInput" placeholder="Search..." onkeyup="filterTable()" />
+
+<a asp-action="Create">
+    <button type="button">Create New Entity</button>
+</a>
+
+<table id="entitiesTable" border="1" cellpadding="5">
+    <thead>
+        <tr>
+            <th onclick="sortTable(0)">Id &#x25B2;&#x25BC;</th>
+            <th onclick="sortTable(1)">Name &#x25B2;&#x25BC;</th>
+            <th onclick="sortTable(2)">Date Of Birth &#x25B2;&#x25BC;</th>
+            <th onclick="sortTable(3)">Married &#x25B2;&#x25BC;</th>
+            <th onclick="sortTable(4)">Phone &#x25B2;&#x25BC;</th>
+            <th onclick="sortTable(5)">Salary &#x25B2;&#x25BC;</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var e in Model)
+        {
+            <tr>
+                <td>@e.Id</td>
+                <td contenteditable="true" onblur="updateField(@e.Id, 'Name', this.innerText)">@e.Name</td>
+                <td contenteditable="true" onblur="updateField(@e.Id, 'DateOfBirth', this.innerText)">@e.DateOfBirth</td>
+                <td contenteditable="true" onblur="updateField(@e.Id, 'Married', this.innerText)">@e.Married</td>
+                <td contenteditable="true" onblur="updateField(@e.Id, 'Phone', this.innerText)">@e.Phone</td>
+                <td contenteditable="true" onblur="updateField(@e.Id, 'Salary', this.innerText)">@e.Salary</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<script>
+    async function updateField(id, field, value) {
+        await fetch('/Entity/UpdateField', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, field, value })
+        });
+    }
+        function sortTable(n) {
+        const table = document.getElementById("entitiesTable");
+        let rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+        switching = true;
+        dir = "asc";
+
+        while (switching) {
+            switching = false;
+            rows = table.rows;
+            for (i = 1; i < (rows.length - 1); i++) {
+                shouldSwitch = false;
+                x = rows[i].getElementsByTagName("TD")[n];
+                y = rows[i + 1].getElementsByTagName("TD")[n];
+
+                let xContent = x.innerText.toLowerCase();
+                let yContent = y.innerText.toLowerCase();
+
+                if (!isNaN(Date.parse(xContent)) && !isNaN(Date.parse(yContent))) {
+                    xContent = new Date(xContent);
+                    yContent = new Date(yContent);
+                } else if (!isNaN(xContent) && !isNaN(yContent)) {
+                    xContent = parseFloat(xContent);
+                    yContent = parseFloat(yContent);
+                }
+
+                if (dir === "asc") {
+                    if (xContent > yContent) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                } else if (dir === "desc") {
+                    if (xContent < yContent) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+            }
+            if (shouldSwitch) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                switching = true;
+                switchcount++;
+            } else {
+                if (switchcount === 0 && dir === "asc") {
+                    dir = "desc";
+                    switching = true;
+                }
+            }
+        }
+    }
+        function filterTable() {
+        const input = document.getElementById("searchInput").value.toLowerCase();
+        const table = document.getElementById("entitiesTable");
+        const rows = table.getElementsByTagName("tr");
+
+        for (let i = 1; i < rows.length; i++) {
+            let cells = rows[i].getElementsByTagName("td");
+            let match = false;
+            for (let j = 0; j < cells.length; j++) {
+                if (cells[j].innerText.toLowerCase().includes(input)) {
+                    match = true;
+                    break;
+                }
+            }
+            rows[i].style.display = match ? "" : "none";
+        }
+    }
+</script>

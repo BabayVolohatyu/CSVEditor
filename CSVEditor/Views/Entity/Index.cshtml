@@ -1,0 +1,28 @@
+﻿@{
+    ViewData["Title"] = "Entity Manager";
+}
+
+<h2>Entity Manager</h2>
+
+<div>
+    <form asp-controller="Entity" asp-action="UploadCsv" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".csv" required />
+        <div>
+            <label>
+                <input type="radio" name="mode" value="append" checked /> Append
+            </label>
+            <label>
+                <input type="radio" name="mode" value="rewrite" /> Rewrite
+            </label>
+        </div>
+        <button type="submit">Upload CSV</button>
+    </form>
+</div>
+
+<hr />
+
+<div>
+    <form asp-controller="Entity" asp-action="LoadFromDb" method="get">
+        <button type="submit">Load from Database</button>
+    </form>
+</div>
