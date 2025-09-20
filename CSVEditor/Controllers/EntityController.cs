@@ -7,7 +7,6 @@ using System.Globalization;
 
 namespace CSVEditor.Controllers
 {
-    [Route("")]
     public class EntityController : Controller
     {
         private readonly CsvAppDbContext _context;
@@ -27,24 +26,48 @@ namespace CSVEditor.Controllers
             if (file == null || file.Length == 0)
                 return BadRequest("File wasn't loaded");
 
-            List<Entity> records;
-            using (var reader = new StreamReader(file.OpenReadStream()))
-            using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+            try
             {
-                records = csv.GetRecords<Entity>().ToList();
-            }
+                if (mode == "rewrite")
+                {
+                    await _context.Database.ExecuteSqlRawAsync("DELETE FROM Entities");
+                }
 
-            if (mode == "rewrite")
+                using var reader = new StreamReader(file.OpenReadStream());
+                using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
+
+                const int batchSize = 1000;
+                var batch = new List<Entity>();
+
+                await foreach (var record in csv.GetRecordsAsync<Entity>())
+                {
+                    record.Id = 0;
+                    batch.Add(record);
+
+                    if (batch.Count >= batchSize)
+                    {
+                        _context.Entities.AddRange(batch);
+                        await _context.SaveChangesAsync();
+                        batch.Clear();
+                    }
+                }
+
+                if (batch.Count > 0)
+                {
+                    _context.Entities.AddRange(batch);
+                    await _context.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
             {
-                _context.Entities.RemoveRange(_context.Entities);
-                await _context.SaveChangesAsync();
+                
+                var inner = ex.InnerException != null ? ex.InnerException.Message : "";
+                return BadRequest("Error processing CSV: " + ex.Message + " | Inner: " + inner);
             }
-
-            _context.Entities.AddRange(records);
-            await _context.SaveChangesAsync();
 
             return RedirectToAction("Table");
         }
+
 
         [HttpGet("LoadFromDb")]
         public IActionResult LoadFromDb()
@@ -109,5 +132,18 @@ namespace CSVEditor.Controllers
             }
             return View(entity);
         }
+        [HttpPost("Delete")]
+        public async Task<IActionResult> Delete([FromBody] int id)
+        {
+            var entity = await _context.Entities.FindAsync(id);
+            if (entity == null)
+                return NotFound();
+
+            _context.Entities.Remove(entity);
+            await _context.SaveChangesAsync();
+            return Ok();
+        }
+
+
     }
 }

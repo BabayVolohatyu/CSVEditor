@@ -21,23 +21,27 @@
             <th onclick="sortTable(3)">Married &#x25B2;&#x25BC;</th>
             <th onclick="sortTable(4)">Phone &#x25B2;&#x25BC;</th>
             <th onclick="sortTable(5)">Salary &#x25B2;&#x25BC;</th>
+            <th>Delete</th>
         </tr>
     </thead>
     <tbody>
         @foreach (var e in Model)
         {
-            <tr>
+            <tr data-id="@e.Id">
                 <td>@e.Id</td>
                 <td contenteditable="true" onblur="updateField(@e.Id, 'Name', this.innerText)">@e.Name</td>
                 <td contenteditable="true" onblur="updateField(@e.Id, 'DateOfBirth', this.innerText)">@e.DateOfBirth</td>
                 <td contenteditable="true" onblur="updateField(@e.Id, 'Married', this.innerText)">@e.Married</td>
                 <td contenteditable="true" onblur="updateField(@e.Id, 'Phone', this.innerText)">@e.Phone</td>
                 <td contenteditable="true" onblur="updateField(@e.Id, 'Salary', this.innerText)">@e.Salary</td>
+                <td>
+                    <button onclick="deleteEntity(@e.Id)">Delete</button>
+                </td>
             </tr>
         }
     </tbody>
-</table>
 
+</table>
 <script>
     async function updateField(id, field, value) {
         await fetch('/Entity/UpdateField', {
@@ -46,7 +50,8 @@
             body: JSON.stringify({ id, field, value })
         });
     }
-        function sortTable(n) {
+
+    function sortTable(n) {
         const table = document.getElementById("entitiesTable");
         let rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
         switching = true;
@@ -83,6 +88,7 @@
                     }
                 }
             }
+
             if (shouldSwitch) {
                 rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
                 switching = true;
@@ -95,7 +101,8 @@
             }
         }
     }
-        function filterTable() {
+
+    function filterTable() {
         const input = document.getElementById("searchInput").value.toLowerCase();
         const table = document.getElementById("entitiesTable");
         const rows = table.getElementsByTagName("tr");
@@ -103,13 +110,31 @@
         for (let i = 1; i < rows.length; i++) {
             let cells = rows[i].getElementsByTagName("td");
             let match = false;
+
             for (let j = 0; j < cells.length; j++) {
                 if (cells[j].innerText.toLowerCase().includes(input)) {
                     match = true;
                     break;
                 }
             }
+
             rows[i].style.display = match ? "" : "none";
         }
     }
+    async function deleteEntity(id) {
+        if (!confirm("Are you sure you want to delete this entity?")) return;
+        const response = await fetch('/Entity/Delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+        });
+
+        if (response.ok) {
+            const row = document.querySelector(`#entitiesTable tr[data-id='${id}']`);
+            if (row) row.remove();
+        } else {
+            alert("Failed to delete entity.");
+        }
+    }
+
 </script>
