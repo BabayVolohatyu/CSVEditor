@@ -7,6 +7,7 @@ using System.Globalization;
 
 namespace CSVEditor.Controllers
 {
+    [Route("")]
     public class EntityController : Controller
     {
         private readonly CsvAppDbContext _context;
@@ -21,7 +22,9 @@ namespace CSVEditor.Controllers
             return View();
         }
         [HttpPost("UploadCsv")]
-        public async Task<IActionResult> UploadCsv(IFormFile file, string mode)
+        public async Task<IActionResult> UploadCsv(
+            [FromForm] IFormFile file,
+            [FromForm] string mode)
         {
             if (file == null || file.Length == 0)
                 return BadRequest("File wasn't loaded");
