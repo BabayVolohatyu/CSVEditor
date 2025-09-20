@@ -136,9 +136,9 @@ namespace CSVEditor.Controllers
             return View(entity);
         }
         [HttpPost("Delete")]
-        public async Task<IActionResult> Delete([FromBody] int id)
+        public async Task<IActionResult> Delete([FromBody] DeleteRequest request)
         {
-            var entity = await _context.Entities.FindAsync(id);
+            var entity = await _context.Entities.FindAsync(request.Id);
             if (entity == null)
                 return NotFound();
 
